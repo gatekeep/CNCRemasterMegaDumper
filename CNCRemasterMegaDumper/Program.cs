@@ -73,7 +73,7 @@ namespace CNCRemasterMegaDumper
             MemoryMappedFile file = MemoryMappedFile.CreateFromFile(new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.None), fileName, 0L, MemoryMappedFileAccess.Read, HandleInheritability.None, false);
 
             // read total length
-            using (BinaryReader reader = new BinaryReader(file.CreateViewStream(offset, 4)))
+            using (BinaryReader reader = new BinaryReader(file.CreateViewStream(offset, 4, MemoryMappedFileAccess.Read)))
             {
                 uint length = reader.ReadUInt32();
                 if (length == 4294967295U || length == 2415919103U)
@@ -82,7 +82,7 @@ namespace CNCRemasterMegaDumper
 
             // read length metadata
             offset += 4U;
-            using (BinaryReader reader = new BinaryReader(file.CreateViewStream(offset, 12)))
+            using (BinaryReader reader = new BinaryReader(file.CreateViewStream(offset, 12, MemoryMappedFileAccess.Read)))
             {
                 descriptorCount = reader.ReadUInt32();
                 totalFiles = reader.ReadUInt32();
@@ -93,7 +93,7 @@ namespace CNCRemasterMegaDumper
 
             // read the file path table
             offset += 12U;
-            using (BinaryReader reader = new BinaryReader(file.CreateViewStream(offset, fileNameTableSize)))
+            using (BinaryReader reader = new BinaryReader(file.CreateViewStream(offset, fileNameTableSize, MemoryMappedFileAccess.Read)))
             {
                 fileNameTable = new string[totalFiles];
                 for (uint fileIdx = 0u; fileIdx < totalFiles; fileIdx++)
@@ -105,7 +105,7 @@ namespace CNCRemasterMegaDumper
 
             // read the file descriptors table
             offset += fileNameTableSize;
-            using (MemoryMappedViewAccessor mappedAccessor = file.CreateViewAccessor(offset, fileDataTableSize))
+            using (MemoryMappedViewAccessor mappedAccessor = file.CreateViewAccessor(offset, fileDataTableSize, MemoryMappedFileAccess.Read))
             {
                 for (uint fileIdx = 0u; fileIdx < descriptorCount; fileIdx++)
                 {
@@ -130,7 +130,7 @@ namespace CNCRemasterMegaDumper
                 if (!descriptorTable.TryGetValue(kvp.Key, out subFileData))
                     continue;
 
-                using (Stream stream = file.CreateViewStream(subFileData.DataOffset, subFileData.FileSize))
+                using (Stream stream = file.CreateViewStream(subFileData.DataOffset, subFileData.FileSize, MemoryMappedFileAccess.Read))
                 {
                     using (Stream outStream = File.Open(path + Path.DirectorySeparatorChar + filename, FileMode.Create, FileAccess.ReadWrite, FileShare.None))
                     {
